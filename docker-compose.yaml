@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shop_db
+    environment:
+      POSTGRES_DB: shop_db
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop
+      LANG: ru_RU.utf8
+      LC_ALL: ru_RU.utf8
+    ports:
+      - "5433:5432"
+    volumes:
+      - shopdb_data:/var/lib/postgresql/data
+
+volumes:
+  shopdb_data:
