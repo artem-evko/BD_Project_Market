@@ -27,6 +27,9 @@ logging:
     org.springframework.boot.context.properties: TRACE
     org.springframework.core.env: DEBUG
 
+jwt:
+  secret: "very-long-and-quite-random-secret-key-1234567890"
+  expiration-minutes: 30
 
 server:
   port: 8080
