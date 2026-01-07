@@ -3,6 +3,8 @@ package com.shop.system.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -26,4 +28,7 @@ public class ProductCategory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private ProductCategory parent;
+
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    private Set<ProductCategoryLink> productLinks = new HashSet<>();
 }
