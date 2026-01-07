@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> {
 
+    boolean existsByLogin(String login);
+
     Optional<UserAccount> findByLoginAndIsActiveTrue(String login);
 
     @Query("""
