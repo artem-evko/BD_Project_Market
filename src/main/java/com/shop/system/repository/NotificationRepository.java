@@ -1,4 +1,12 @@
+// src/main/java/com/shop/system/repository/NotificationRepository.java
 package com.shop.system.repository;
 
-public class NotificationRepository {
+import com.shop.system.domain.entity.Notification;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.UUID;
+
+@Repository
+public interface NotificationRepository extends JpaRepository<Notification, UUID> {
 }
