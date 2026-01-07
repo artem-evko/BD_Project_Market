@@ -1,12 +1,42 @@
-// src/main/java/com/shop/system/repository/EmployeeRepository.java
 package com.shop.system.repository;
 
 import com.shop.system.domain.entity.Employee;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.UUID;
 
-@Repository
 public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
+
+    @Query("""
+        select e from Employee e
+        left join fetch e.position p
+        left join fetch e.department d
+        left join fetch e.userAccount ua
+        left join fetch ua.role r
+        where (:searchPattern is null or e.fullName ilike :searchPattern)
+          and (:departmentId is null or d.id = :departmentId)
+          and (:positionId is null or p.id = :positionId)
+          and (:status is null or :status = 'all' or e.employmentStatus = :status)
+        """)
+    Page<Employee> findEmployees(
+            @Param("searchPattern") String searchPattern,
+            @Param("departmentId") UUID departmentId,
+            @Param("positionId") UUID positionId,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
+    @Query("""
+        select e from Employee e
+        left join fetch e.position p
+        left join fetch e.department d
+        left join fetch e.userAccount ua
+        left join fetch ua.role r
+        where e.id = :id
+        """)
+    Optional<Employee> findWithDetailsById(@Param("id") UUID id);
 }
