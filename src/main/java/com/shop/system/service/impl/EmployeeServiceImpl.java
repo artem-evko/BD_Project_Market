@@ -180,14 +180,19 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new BusinessException("Сотрудник не найден"));
 
+        // архивируем сотрудника
+        employee.setEmploymentStatus("archived");
+
+        // деактивируем учётку
         if (employee.getUserAccount() != null) {
-            userAccountRepository.delete(employee.getUserAccount());
+            employee.getUserAccount().setIsActive(false);
         }
 
-        employeeRepository.delete(employee);
+        employeeRepository.save(employee);
 
-        return new ApiResponse(true, "Сотрудник удалён");
+        return new ApiResponse(true, "Сотрудник архивирован");
     }
+
 
     // -------------------- mapping --------------------
 
