@@ -85,4 +85,8 @@ public class Employee {
     public void preUpdate() {
         updatedAt = Instant.now();
     }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "storage_location_id")
+    private StorageLocation storageLocation;
 }

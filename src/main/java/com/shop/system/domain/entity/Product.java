@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -53,6 +53,13 @@ public class Product {
 
     @Column(name = "archived", nullable = false)
     private Boolean archived;
+
+    @OneToMany(
+            mappedBy = "product",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<ProductCategoryLink> categoryLinks = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
