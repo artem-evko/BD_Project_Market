@@ -12,6 +12,7 @@ public interface ProductCategoryLinkRepository extends JpaRepository<ProductCate
     long countByCategory(ProductCategory category);
 
     List<ProductCategoryLink> findAllByProduct(Product product);
+    List<ProductCategoryLink> findByProduct(Product product);
 
     void deleteByProduct(Product product);
 

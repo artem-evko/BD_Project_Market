@@ -7,46 +7,35 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     @Query("""
-    SELECT DISTINCT p FROM Product p
-    LEFT JOIN p.categories c
-    WHERE p.archived = false
-      AND (
-        :query IS NULL
-        OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))
-        OR LOWER(p.barcode) LIKE LOWER(CONCAT('%', :query, '%'))
-      )
-      AND (
-        :category IS NULL
-        OR LOWER(c.name) = LOWER(:category)
-      )
+    select distinct p
+    from Product p
+    join StorePrice sp
+        on sp.product = p
+       and sp.storageLocation.id = :storageLocationId
+       and sp.effectiveDate <= :today
+    left join p.categoryLinks cl
+    left join cl.category c
+    where
+        (:includeArchived = true or p.archived = false)
+        and (:pattern is null
+             or lower(p.name) like :pattern
+             or lower(p.barcode) like :pattern)
+        and (:categoryPattern is null
+             or lower(c.name) like :categoryPattern)
 """)
-    Page<Product> searchProducts(
-            @Param("query") String query,
-            @Param("category") String category,
+    Page<Product> searchProductsForLocation(
+            @Param("storageLocationId") UUID storageLocationId,
+            @Param("pattern") String pattern,
+            @Param("categoryPattern") String categoryPattern,
+            @Param("includeArchived") boolean includeArchived,
+            @Param("today") LocalDate today,
             Pageable pageable
     );
 
-    @Query("""
-        select distinct p
-        from Product p
-        left join p.categoryLinks pcl
-        left join pcl.category c
-         where (
-              :search is null
-              or lower(p.name) like lower(concat('%', :search, '%'))
-              or lower(p.barcode) like lower(concat('%', :search, '%'))
-          )
-          and (
-              :category is null
-              or lower(c.name) = lower(:category)
-          )
-        """)
-    Page<Product> searchProductsIncludingArchived(@Param("search") String search,
-                                 @Param("category") String category,
-                                 Pageable pageable);
 }

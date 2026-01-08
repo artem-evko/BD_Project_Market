@@ -11,9 +11,10 @@ import java.util.UUID;
 
 public interface StorePriceRepository extends JpaRepository<StorePrice, UUID> {
 
-    Optional<StorePrice> findFirstByStorageLocationAndProductAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
-            StorageLocation storageLocation,
-            Product product,
+    Optional<StorePrice>
+    findFirstByStorageLocationIdAndProductIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+            UUID storageLocationId,
+            UUID productId,
             LocalDate effectiveDate
     );
 }

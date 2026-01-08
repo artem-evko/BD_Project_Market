@@ -2,15 +2,15 @@ package com.shop.system.controller;
 
 import com.shop.system.dto.request.ProductCreateRequest;
 import com.shop.system.dto.request.ProductUpdateRequest;
-import com.shop.system.dto.response.ProductCategoryResponse;
-import com.shop.system.dto.response.ProductDetailResponse;
-import com.shop.system.dto.response.ProductResponse;
+import com.shop.system.dto.response.*;
 import com.shop.system.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +27,7 @@ public class ProductController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) boolean includeArchived
+            @RequestParam(required = false) Boolean includeArchived
     ) {
         return productService.getProducts(page, size, search, category, includeArchived);
 
@@ -69,8 +69,31 @@ public class ProductController {
         productService.unarchiveProduct(id);
     }
 
-    //TODO: GET /{productId}/operations
-    //GET /locations
+    @GetMapping("/{id}/locations")
+    public List<ProductLocationZoneResponse> getProductLocations(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String zoneType,
+            @RequestParam(required = false, defaultValue = "true") boolean onlyAvailable
+    ) {
+        return productService.getProductLocations(id, zoneType, onlyAvailable);
+    }
+
+    @GetMapping("/{id}/operations")
+    public Page<ProductOperationResponse> getProductOperations(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate dateFrom,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate dateTo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return productService.getProductOperations(id, type, dateFrom, dateTo, page, size);
+    }
+
 
 
 }

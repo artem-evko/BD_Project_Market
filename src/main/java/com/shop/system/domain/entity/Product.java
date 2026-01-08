@@ -4,10 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -57,8 +54,12 @@ public class Product {
     @Column(name = "archived", nullable = false)
     private Boolean archived;
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
-    private List<ProductCategoryLink> categoryLinks;
+    @OneToMany(
+            mappedBy = "product",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<ProductCategoryLink> categoryLinks = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
