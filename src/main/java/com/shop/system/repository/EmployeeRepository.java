@@ -12,23 +12,29 @@ import java.util.UUID;
 public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     @Query("""
-        select e from Employee e
-        left join fetch e.position p
-        left join fetch e.department d
-        left join fetch e.userAccount ua
-        left join fetch ua.role r
-        where (:searchPattern is null or e.fullName ilike :searchPattern)
-          and (:departmentId is null or d.id = :departmentId)
-          and (:positionId is null or p.id = :positionId)
-          and (:status is null or :status = 'all' or e.employmentStatus = :status)
-        """)
+    select e from Employee e
+    left join fetch e.position p
+    left join fetch e.department d
+    left join fetch e.userAccount ua
+    left join fetch ua.role r
+    where
+        (:search is null or e.fullName ilike concat('%', :search, '%'))
+    and (:departmentId is null or d.id = :departmentId)
+    and (:positionId is null or p.id = :positionId)
+    and (
+            (:status is null and e.employmentStatus <> 'archived')
+         or (:status = 'all')
+         or (e.employmentStatus = :status)
+        )
+    """)
     Page<Employee> findEmployees(
-            @Param("searchPattern") String searchPattern,
+            @Param("search") String search,
             @Param("departmentId") UUID departmentId,
             @Param("positionId") UUID positionId,
             @Param("status") String status,
             Pageable pageable
     );
+
 
     @Query("""
         select e from Employee e
