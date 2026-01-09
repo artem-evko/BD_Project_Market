@@ -7,13 +7,11 @@ import com.shop.system.dto.response.*;
 import com.shop.system.exception.EntityNotFoundException;
 import com.shop.system.mapper.ProductMapper;
 import com.shop.system.repository.*;
-import com.shop.system.security.CurrentUserPrincipal;
 import com.shop.system.service.ProductService;
+import com.shop.system.service.context.StorageLocationContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +32,11 @@ public class ProductServiceImpl implements ProductService {
     private final StorePriceRepository storePriceRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductCategoryLinkRepository productCategoryLinkRepository;
-    private final UserAccountRepository userAccountRepository;
     private final ProductMapper productMapper;
     private final ManufacturerRepository manufacturerRepository;
     private final BatchLocationRepository batchLocationRepository;
     private final WarehouseOperationRepository warehouseOperationRepository;
+    private final StorageLocationContextService storageLocationContextService;
 
     @Override
     public Page<ProductResponse> getProducts(
@@ -46,7 +44,7 @@ public class ProductServiceImpl implements ProductService {
             String search, String category,
             Boolean includeArchived
     ) {
-        StorageLocation storageLocation = resolveCurrentStorageLocation();
+        StorageLocation storageLocation = storageLocationContextService.getCurrentStorageLocation();
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -85,7 +83,6 @@ public class ProductServiceImpl implements ProductService {
                 pageable
         );
 
-
         List<ProductResponse> mapped = productPage
                 .getContent()
                 .stream()
@@ -102,61 +99,13 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
-
     @Override
     public ProductDetailResponse getProduct(UUID id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product id = {}" + id));
+                .orElseThrow(() -> new EntityNotFoundException("Product id = " + id));
         return productMapper.toDetail(product);
     }
 
-    /**
-     * Определяем текущую ТТ из юзера в SecurityContext:
-     * UserAccount.login -> Employee -> storageLocation.
-     */
-    private StorageLocation resolveCurrentStorageLocation() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new IllegalStateException("Пользователь не аутентифицирован");
-        }
-
-        Object principal = auth.getPrincipal();
-        String login;
-
-        if (principal instanceof CurrentUserPrincipal cup) {
-            login = cup.login();
-        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails ud) {
-            login = ud.getUsername();
-        } else {
-            login = auth.getName();
-        }
-
-        log.info("AUTH RESOLVED LOGIN = {}", login);
-
-        UserAccount userAccount = userAccountRepository
-                .findByLoginAndIsActiveTrue(login)
-                .orElseThrow(() -> new IllegalStateException("Учётная запись не найдена или не активна"));
-
-        Employee employee = userAccount.getEmployee();
-        if (employee == null) {
-            throw new IllegalStateException("У учётной записи отсутствует связанный сотрудник");
-        }
-
-        StorageLocation storageLocation = employee.getStorageLocation();
-        if (storageLocation == null) {
-            throw new IllegalStateException(
-                    "Для сотрудника '%s' не указана торговая точка / склад"
-                            .formatted(employee.getFullName())
-            );
-        }
-        log.info("STORAGE LOCATION: id={}, name={}", storageLocation.getId(), storageLocation.getName());
-
-        return storageLocation;
-    }
-
-    /**
-     * Берём последнюю цену на дату для товара по текущей ТТ.
-     */
     private BigDecimal resolveCurrentPrice(StorageLocation storageLocation, Product product, LocalDate date) {
         return storePriceRepository
                 .findFirstByStorageLocationIdAndProductIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
@@ -193,14 +142,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDetailResponse createProduct(ProductCreateRequest request) {
-        var manufacturer = manufacturerRepository.findById(request.getManufacturerId())
+        Manufacturer manufacturer = manufacturerRepository.findById(request.getManufacturerId())
                 .orElseThrow(() -> new EntityNotFoundException("Manufacturer not found"));
 
         Product product = productMapper.fromCreateRequest(request, manufacturer);
         Product savedProduct = productRepository.save(product);
 
         if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
-            var categories = productCategoryRepository.findAllById(request.getCategoryIds());
+            List<ProductCategory> categories = productCategoryRepository.findAllById(request.getCategoryIds());
 
             List<ProductCategoryLink> links = categories.stream()
                     .map(cat -> ProductCategoryLink.builder()
@@ -210,7 +159,6 @@ public class ProductServiceImpl implements ProductService {
                     .toList();
 
             productCategoryLinkRepository.saveAll(links);
-
             savedProduct.setCategoryLinks(links);
         }
 
@@ -228,21 +176,20 @@ public class ProductServiceImpl implements ProductService {
 
         productMapper.updateEntity(product, request, manufacturer);
 
-
         Set<UUID> requestedCategoryIds = request.getCategoryIds() == null
-                ? java.util.Collections.emptySet()
-                : new java.util.HashSet<>(request.getCategoryIds());
+                ? Collections.emptySet()
+                : new HashSet<>(request.getCategoryIds());
 
         List<ProductCategoryLink> existingLinks = productCategoryLinkRepository.findByProduct(product);
 
         Set<UUID> existingCategoryIds = existingLinks.stream()
                 .map(link -> link.getCategory().getId())
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
-        java.util.Set<UUID> toRemove = new java.util.HashSet<>(existingCategoryIds);
+        Set<UUID> toRemove = new HashSet<>(existingCategoryIds);
         toRemove.removeAll(requestedCategoryIds);
 
-        java.util.Set<UUID> toAdd = new java.util.HashSet<>(requestedCategoryIds);
+        Set<UUID> toAdd = new HashSet<>(requestedCategoryIds);
         toAdd.removeAll(existingCategoryIds);
 
         if (!toRemove.isEmpty()) {
@@ -256,8 +203,8 @@ public class ProductServiceImpl implements ProductService {
         if (!toAdd.isEmpty()) {
             List<ProductCategory> categoriesToAdd = productCategoryRepository.findAllById(toAdd);
 
-            java.util.Map<UUID, ProductCategory> categoriesById = categoriesToAdd.stream()
-                    .collect(java.util.stream.Collectors.toMap(ProductCategory::getId, c -> c));
+            Map<UUID, ProductCategory> categoriesById = categoriesToAdd.stream()
+                    .collect(Collectors.toMap(ProductCategory::getId, c -> c));
 
             List<ProductCategoryLink> linksToAdd = toAdd.stream()
                     .map(catId -> {
@@ -276,11 +223,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Product saved = productRepository.save(product);
-
         return productMapper.toDetail(saved);
     }
-
-
 
     @Override
     @Transactional
@@ -315,7 +259,7 @@ public class ProductServiceImpl implements ProductService {
             String zoneType,
             Boolean onlyAvailable
     ) {
-        StorageLocation storageLocation = resolveCurrentStorageLocation();
+        StorageLocation storageLocation = storageLocationContextService.getCurrentStorageLocation();
 
         boolean onlyAvailableEffective = (onlyAvailable == null) || Boolean.TRUE.equals(onlyAvailable);
 
@@ -386,7 +330,7 @@ public class ProductServiceImpl implements ProductService {
             int page,
             int size
     ) {
-        StorageLocation storageLocation = resolveCurrentStorageLocation();
+        StorageLocation storageLocation = storageLocationContextService.getCurrentStorageLocation();
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -442,6 +386,4 @@ public class ProductServiceImpl implements ProductService {
                 operationsPage.getTotalElements()
         );
     }
-
-
 }

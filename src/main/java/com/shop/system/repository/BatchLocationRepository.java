@@ -5,7 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface BatchLocationRepository extends JpaRepository<BatchLocation, UUID> {
@@ -28,4 +30,33 @@ public interface BatchLocationRepository extends JpaRepository<BatchLocation, UU
             @Param("zoneType") String zoneType,
             @Param("onlyAvailable") boolean onlyAvailable
     );
+
+    @Query("""
+        select bl
+        from BatchLocation bl
+        join bl.batch b
+        join bl.storageZone z
+        where b.product.id = :productId
+          and z.storageLocation.id = :storageLocationId
+          and z.isActive = true
+          and (:onlyAvailable = false or bl.quantity > 0)
+        """)
+    List<BatchLocation> findByProductAndLocation(
+            @Param("productId") UUID productId,
+            @Param("storageLocationId") UUID storageLocationId,
+            @Param("onlyAvailable") boolean onlyAvailable
+    );
+
+    @Query("""
+        select coalesce(sum(bl.quantity), 0)
+        from BatchLocation bl
+        where bl.batch.id = :batchId
+          and bl.storageZone.id = :storageZoneId
+        """)
+    BigDecimal getQuantityForBatchInZone(
+            @Param("batchId") UUID batchId,
+            @Param("storageZoneId") UUID storageZoneId
+    );
+
+    Optional<BatchLocation> findByBatchIdAndStorageZoneId(UUID batchId, UUID storageZoneId);
 }

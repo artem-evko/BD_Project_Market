@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public interface WarehouseOperationRepository extends JpaRepository<WarehouseOperation, UUID> {
@@ -35,5 +36,23 @@ public interface WarehouseOperationRepository extends JpaRepository<WarehouseOpe
             @Param("dateFrom") Instant dateFrom,
             @Param("dateTo") Instant dateTo,
             Pageable pageable
+    );
+
+    @Query("""
+        select wo
+        from WarehouseOperation wo
+        left join fetch wo.fromZone fz
+        left join fetch wo.toZone tz
+        left join fetch wo.employee e
+        left join fetch wo.product p
+        where (fz.storageLocation.id = :storageLocationId or tz.storageLocation.id = :storageLocationId)
+          and wo.operationDate >= :fromInstant
+          and wo.operationDate < :toInstant
+        order by wo.operationDate desc
+        """)
+    List<WarehouseOperation> findForLocationInPeriod(
+            @Param("storageLocationId") UUID storageLocationId,
+            @Param("fromInstant") Instant fromInstant,
+            @Param("toInstant") Instant toInstant
     );
 }
