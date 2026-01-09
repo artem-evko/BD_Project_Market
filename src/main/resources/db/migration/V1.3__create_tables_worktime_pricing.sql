@@ -1,5 +1,5 @@
 -- 2.20 work_schedule_templates
-CREATE TABLE IF NOT EXISTS work_schedule_templates (
+create TABLE IF NOT EXISTS work_schedule_templates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     position_id UUID NOT NULL REFERENCES positions(id),
     employee_id UUID NOT NULL REFERENCES employees(id),
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS work_schedule_templates (
 );
 
 -- 2.21 employee_schedule
-CREATE TABLE IF NOT EXISTS employee_schedule (
+create TABLE IF NOT EXISTS employee_schedule (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_id UUID NOT NULL REFERENCES employees(id),
     template_id UUID REFERENCES work_schedule_templates(id),
@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS employee_schedule (
 );
 
 -- 2.22 employee_worktime
-CREATE TABLE IF NOT EXISTS employee_worktime (
+create TABLE IF NOT EXISTS employee_worktime (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_id UUID NOT NULL REFERENCES employees(id),
     date DATE NOT NULL,
-    scheduled_start TIME,
-    scheduled_end TIME,
+    scheduled_start TIMESTAMP(6),
+    scheduled_end   TIMESTAMP(6),
     actual_login TIMESTAMP,
     actual_logout TIMESTAMP,
     status VARCHAR(50),
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS employee_worktime (
 );
 
 -- 2.23.1 work_report_headers
-CREATE TABLE IF NOT EXISTS work_report_headers (
+create TABLE IF NOT EXISTS work_report_headers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     week_start DATE NOT NULL,
     storage_location_id UUID NOT NULL REFERENCES storage_locations(id),
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS work_report_headers (
 );
 
 -- 2.23.2 work_report_lines
-CREATE TABLE IF NOT EXISTS work_report_lines (
+create TABLE IF NOT EXISTS work_report_lines (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_id UUID NOT NULL REFERENCES work_report_headers(id),
     employee_id UUID NOT NULL REFERENCES employees(id),
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS work_report_lines (
 );
 
 -- 2.24 vacations
-CREATE TABLE IF NOT EXISTS vacations (
+create TABLE IF NOT EXISTS vacations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_id UUID NOT NULL REFERENCES employees(id),
     created_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS vacations (
 );
 
 -- 2.24.1 vacation_balance
-CREATE TABLE IF NOT EXISTS vacation_balance (
+create TABLE IF NOT EXISTS vacation_balance (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_id UUID NOT NULL REFERENCES employees(id),
     year INTEGER NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS vacation_balance (
 );
 
 -- 2.25 sick_leaves
-CREATE TABLE IF NOT EXISTS sick_leaves (
+create TABLE IF NOT EXISTS sick_leaves (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_id UUID NOT NULL REFERENCES employees(id),
     created_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS sick_leaves (
 );
 
 -- 2.26 price_restrictions
-CREATE TABLE IF NOT EXISTS price_restrictions (
+create TABLE IF NOT EXISTS price_restrictions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     scope_type VARCHAR(20) NOT NULL, -- all / product / category
     storage_location_id UUID REFERENCES storage_locations(id),
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS price_restrictions (
 
 -- 2.19 stop_list
 -- Важно: task_id (price_change_tasks) и price_list_item_id (price_list_items) уже будут/есть.
-CREATE TABLE IF NOT EXISTS stop_list (
+create TABLE IF NOT EXISTS stop_list (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     storage_location_id UUID NOT NULL REFERENCES storage_locations(id),
     effective_date DATE,
@@ -143,6 +143,6 @@ CREATE TABLE IF NOT EXISTS stop_list (
 );
 
 -- Индексы (полезно для ежедневных процессов)
-CREATE INDEX IF NOT EXISTS ix_stop_list_effective_date ON stop_list(effective_date);
-CREATE INDEX IF NOT EXISTS ix_employee_worktime_employee_date ON employee_worktime(employee_id, date);
-CREATE INDEX IF NOT EXISTS ix_work_report_headers_week_start ON work_report_headers(week_start);
+create index IF NOT EXISTS ix_stop_list_effective_date ON stop_list(effective_date);
+create index IF NOT EXISTS ix_employee_worktime_employee_date ON employee_worktime(employee_id, date);
+create index IF NOT EXISTS ix_work_report_headers_week_start ON work_report_headers(week_start);

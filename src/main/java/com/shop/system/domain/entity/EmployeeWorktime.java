@@ -5,7 +5,6 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.UUID;
 
 @Getter
@@ -26,14 +25,17 @@ public class EmployeeWorktime {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-    @Column(name = "date", nullable = false)
+    /**
+     * Дата смены (обычно "сегодня" или "вчера" для open)
+     */
+    @Column(name = "date")
     private LocalDate date;
 
     @Column(name = "scheduled_start")
-    private LocalTime scheduledStart;
+    private LocalDateTime scheduledStart;
 
     @Column(name = "scheduled_end")
-    private LocalTime scheduledEnd;
+    private LocalDateTime scheduledEnd;
 
     @Column(name = "actual_login")
     private LocalDateTime actualLogin;
@@ -41,13 +43,16 @@ public class EmployeeWorktime {
     @Column(name = "actual_logout")
     private LocalDateTime actualLogout;
 
-    @Column(name = "status", length = 50)
-    private String status; // норма/переработка/недоработка/...
+    /**
+     * draft / confirmed / sent (по ТЗ)
+     */
+    @Column(name = "status", length = 30)
+    private String status;
 
     @Column(name = "auto_closed")
     private Boolean autoClosed;
 
-    @Column(name = "auto_close_reason", length = 100)
+    @Column(name = "auto_close_reason")
     private String autoCloseReason;
 
     @Column(name = "confirmation_sent_at")
@@ -56,13 +61,12 @@ public class EmployeeWorktime {
     @Column(name = "confirmation_deadline_at")
     private LocalDateTime confirmationDeadlineAt;
 
+    /**
+     * continue / stop / no_response
+     */
+    @Column(name = "confirmation_result", length = 30)
+    private String confirmationResult;
+
     @Column(name = "confirmation_response_at")
     private LocalDateTime confirmationResponseAt;
-
-    @Column(name = "confirmation_result", length = 20)
-    private String confirmationResult; // continue/stop/no_response
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "notification_id")
-    private Notification notification;
 }
