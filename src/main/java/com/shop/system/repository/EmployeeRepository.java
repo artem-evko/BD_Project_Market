@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,4 +46,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
         where e.id = :id
         """)
     Optional<Employee> findWithDetailsById(@Param("id") UUID id);
+
+    List<Employee> findByStorageLocation_IdAndEmploymentStatus(UUID storageLocationId, String employmentStatus);
+
+    List<Employee> findByStorageLocation_Id(UUID storageLocationId);
 }
