@@ -23,4 +23,6 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
               and ua.isActive = true
             """)
     Optional<UserAccount> findActiveWithDetails(String login);
+
+    Optional<UserAccount> findByLoginIgnoreCase(String login);
 }
