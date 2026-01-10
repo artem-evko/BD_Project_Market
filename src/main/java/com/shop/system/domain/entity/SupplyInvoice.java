@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -21,12 +23,10 @@ public class SupplyInvoice {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    // contract_id -> contracts.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
 
-    // storage_location_id -> storage_locations.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "storage_location_id", nullable = false)
     private StorageLocation storageLocation;
@@ -43,17 +43,14 @@ public class SupplyInvoice {
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
-    // received_zone_id -> storage_zones.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "received_zone_id")
     private StorageZone receivedZone;
 
-    // storekeeper_id -> employees.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "storekeeper_id")
     private Employee storekeeper;
 
-    // merchandiser_id -> employees.id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merchandiser_id")
     private Employee merchandiser;
@@ -63,4 +60,22 @@ public class SupplyInvoice {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @OneToMany(mappedBy = "supplyInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SupplyInvoiceItem> items = new ArrayList<>();
+
+    // --- lifecycle hooks ---
+    @PrePersist
+    public void prePersist() {
+        Instant now = Instant.now();
+        createdAt = now;
+        updatedAt = now;
+        if (status == null) status = "expected";
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = Instant.now();
+    }
 }
+
