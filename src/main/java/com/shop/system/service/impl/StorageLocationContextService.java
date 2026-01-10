@@ -23,6 +23,38 @@ public class StorageLocationContextService {
 
     private StorageLocation cachedLocation;
 
+    public Employee getCurrentEmployee() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalStateException("Пользователь не аутентифицирован");
+        }
+
+        Object principal = auth.getPrincipal();
+
+        if (!(principal instanceof CurrentUserPrincipal cup)) {
+            throw new IllegalStateException(
+                    "Некорректный principal в SecurityContext: " + principal
+            );
+        }
+
+        UUID employeeId = cup.employeeId();
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Сотрудник не найден для employeeId=" + employeeId
+                ));
+
+        if (employee.getStorageLocation() == null) {
+            throw new IllegalStateException(
+                    "Для сотрудника '%s' не указана торговая точка / склад"
+                            .formatted(employee.getFullName())
+            );
+        }
+
+        return employee;
+    }
+
     public StorageLocation getCurrentStorageLocation() {
         if (cachedLocation != null) {
             return cachedLocation;
