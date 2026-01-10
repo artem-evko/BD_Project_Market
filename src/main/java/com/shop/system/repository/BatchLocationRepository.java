@@ -13,17 +13,17 @@ import java.util.UUID;
 public interface BatchLocationRepository extends JpaRepository<BatchLocation, UUID> {
 
     @Query("""
-    select bl
-    from BatchLocation bl
-         join fetch bl.batch b
-         join fetch b.product p
-         join fetch bl.storageZone sz
-    where p.id = :productId
-      and sz.storageLocation.id = :storageLocationId
-      and sz.isActive = true
-      and (:zoneType is null or sz.zoneType = :zoneType)
-      and (:onlyAvailable = false or bl.quantity > 0)
-""")
+        select bl
+        from BatchLocation bl
+             join fetch bl.batch b
+             join fetch b.product p
+             join fetch bl.storageZone sz
+        where p.id = :productId
+          and sz.storageLocation.id = :storageLocationId
+          and sz.isActive = true
+          and (:zoneType is null or sz.zoneType = :zoneType)
+          and (:onlyAvailable = false or bl.quantity > 0)
+    """)
     List<BatchLocation> findProductLocations(
             @Param("productId") UUID productId,
             @Param("storageLocationId") UUID storageLocationId,
@@ -56,6 +56,19 @@ public interface BatchLocationRepository extends JpaRepository<BatchLocation, UU
     BigDecimal getQuantityForBatchInZone(
             @Param("batchId") UUID batchId,
             @Param("storageZoneId") UUID storageZoneId
+    );
+
+    @Query("""
+        select coalesce(sum(bl.quantity), 0)
+        from BatchLocation bl
+        join bl.storageZone z
+        where bl.batch.id = :batchId
+          and z.storageLocation.id = :storageLocationId
+          and z.isActive = true
+    """)
+    BigDecimal sumQuantityForBatchInLocation(
+            @Param("batchId") UUID batchId,
+            @Param("storageLocationId") UUID storageLocationId
     );
 
     Optional<BatchLocation> findByBatchIdAndStorageZoneId(UUID batchId, UUID storageZoneId);
