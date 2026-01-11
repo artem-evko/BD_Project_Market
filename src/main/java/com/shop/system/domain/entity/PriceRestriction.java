@@ -21,6 +21,9 @@ public class PriceRestriction {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
+    @Column(name = "priority", nullable = false)
+    private Integer priority; // <-- ДОБАВИТЬ (для сортировки)
+
     @Column(name = "scope_type", nullable = false, length = 20)
     private String scopeType; // all/product/category
 
@@ -53,4 +56,13 @@ public class PriceRestriction {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        if (priority == null) priority = 0;
+        if (allowDailyChangeExceptionForAutoMarkdown == null) {
+            allowDailyChangeExceptionForAutoMarkdown = Boolean.FALSE;
+        }
+    }
 }
