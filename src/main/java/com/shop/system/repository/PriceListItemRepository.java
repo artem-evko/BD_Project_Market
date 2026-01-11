@@ -21,6 +21,6 @@ public interface PriceListItemRepository extends JpaRepository<PriceListItem, UU
     """)
     List<PriceListItem> findByStorageLocation_Id(@Param("storageLocationId") UUID storageLocationId);
     Optional<PriceListItem> findTopByProduct_IdOrderByPriceList_EffectiveDateDesc(UUID productId);
-
+    List<PriceListItem> findAllByStorageLocation_Id(UUID storageLocationId);
 
 }
