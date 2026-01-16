@@ -23,4 +23,6 @@ public class ProductDetailResponse {
     private Integer shelfLifeDays;
     private DimensionsDto dimensions;
     private ManufacturerDto manufacturer;
+    private BigDecimal totalQuantity;
+    private String additionalInfo;
 }

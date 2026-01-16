@@ -88,7 +88,10 @@ public class ProductServiceImpl implements ProductService {
                 .stream()
                 .map(product -> {
                     BigDecimal currentPrice = resolveCurrentPrice(storageLocation, product, today);
-                    return productMapper.toListItem(product, currentPrice);
+                    ProductResponse dto = productMapper.toListItem(product, currentPrice);
+                    BigDecimal totalQty = calculateTotalQuantityForProductLocation(product.getId(), storageLocation.getId());
+                    dto.setTotalQuantity(totalQty);
+                    return dto;
                 })
                 .toList();
 
@@ -99,11 +102,34 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
+    private BigDecimal calculateTotalQuantityForProductLocation(UUID productId, UUID storageLocationId) {
+        List<BatchLocation> locations = batchLocationRepository.findByProductAndLocation(
+                productId, storageLocationId, true);
+        return locations.stream()
+                .map(bl -> bl.getQuantity() == null ? BigDecimal.ZERO : bl.getQuantity())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    }
+
     @Override
     public ProductDetailResponse getProduct(UUID id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product id = " + id));
-        return productMapper.toDetail(product);
+
+        StorageLocation storageLocation = storageLocationContextService.getCurrentStorageLocation();
+
+        // суммарный остаток по партиям в текущей ТТ
+        BigDecimal totalQty = calculateTotalQuantityForProductLocation(
+                product.getId(),
+                storageLocation.getId()
+        );
+
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        ProductDetailResponse dto = productMapper.toDetail(product);
+
+        dto.setTotalQuantity(totalQty);
+
+        return dto;
     }
 
     private BigDecimal resolveCurrentPrice(StorageLocation storageLocation, Product product, LocalDate date) {

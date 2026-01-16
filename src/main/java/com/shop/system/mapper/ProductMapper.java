@@ -41,6 +41,7 @@ public class ProductMapper {
                 .unitOfMeasure(product.getUnitOfMeasure())
                 .shelfLifeDays(product.getShelfLifeDays())
                 .currentPrice(currentPrice)
+                .additionalInfo(product.getAdditionalInfo())
                 .build();
     }
 
@@ -112,6 +113,7 @@ public class ProductMapper {
                 .shelfLifeDays(product.getShelfLifeDays())
                 .dimensions(dimensions)
                 .manufacturer(manufacturerDto)
+                .additionalInfo(product.getAdditionalInfo())
                 .build();
     }
 

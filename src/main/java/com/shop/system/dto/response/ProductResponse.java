@@ -21,5 +21,6 @@ public class ProductResponse {
     private String unitOfMeasure;
     private Integer shelfLifeDays;
     private BigDecimal currentPrice;
-
+    private BigDecimal totalQuantity;
+    private String additionalInfo;
 }
