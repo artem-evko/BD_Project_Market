@@ -6,6 +6,7 @@ import com.shop.system.dto.response.DailySetupResponse;
 import com.shop.system.dto.response.ManualPriceResponse;
 import com.shop.system.dto.response.PriceHistoryResponse;
 import com.shop.system.dto.response.StopListItemResponse;
+import com.shop.system.dto.response.StorageLocationResponse;
 import com.shop.system.security.CurrentUserPrincipal;
 import com.shop.system.service.PriceCalculationService;
 import jakarta.validation.Valid;
@@ -33,6 +34,11 @@ public class PriceController {
     @GetMapping("/current")
     public List<CurrentPriceResponse> currentPrices(@RequestParam UUID storageLocationId) {
         return priceCalculationService.getCurrentPrices(storageLocationId);
+    }
+
+    @GetMapping("/storage-location")
+    public List<StorageLocationResponse> storageLocations() {
+        return priceCalculationService.getStorageLocations();
     }
 
     @GetMapping("/stop-list")
