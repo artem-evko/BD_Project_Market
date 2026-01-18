@@ -72,4 +72,23 @@ public interface BatchLocationRepository extends JpaRepository<BatchLocation, UU
     );
 
     Optional<BatchLocation> findByBatchIdAndStorageZoneId(UUID batchId, UUID storageZoneId);
+
+    @Query("""
+    select bl
+    from BatchLocation bl
+         join bl.batch b
+         join bl.storageZone z
+    where b.product.id = :productId
+      and z.id = :fromZoneId
+      and z.storageLocation.id = :storageLocationId
+      and z.isActive = true
+      and bl.quantity > 0
+    order by b.expirationDate asc, b.id asc
+    """)
+    java.util.List<BatchLocation> findAvailableBatchesForProductInZone(
+            @org.springframework.data.repository.query.Param("productId") java.util.UUID productId,
+            @org.springframework.data.repository.query.Param("fromZoneId") java.util.UUID fromZoneId,
+            @org.springframework.data.repository.query.Param("storageLocationId") java.util.UUID storageLocationId
+    );
+
 }

@@ -135,8 +135,24 @@ public class StockMovementServiceImpl implements StockMovementService {
             throw new IllegalArgumentException("Зоны должны принадлежать текущей торговой точке");
         }
 
-        Batch batch = batchRepository.findById(request.getBatchId())
-                .orElseThrow(() -> new EntityNotFoundException("Batch not found: " + request.getBatchId()));
+        // 🔹 НОВОЕ: получаем batchId по productId + fromZone + текущей ТТ
+        List<BatchLocation> candidates = batchLocationRepository
+                .findAvailableBatchesForProductInZone(
+                        request.getProductId(),
+                        request.getFromZoneId(),
+                        storageLocation.getId()
+                );
+        if(candidates.isEmpty()){
+            throw new IllegalArgumentException(
+                    "Не найдено ни одного товара в исходной зоне для productId=" +request.getProductId() + "и zone= " + request.getFromZoneId());
+        }
+
+        BatchLocation anyLocation = candidates.get(0);
+        UUID batchId = anyLocation.getBatch().getId();
+
+
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new EntityNotFoundException("Batch not found: " + batchId));
 
         Product product = batch.getProduct();
         if (!product.getId().equals(request.getProductId())) {
@@ -145,7 +161,7 @@ public class StockMovementServiceImpl implements StockMovementService {
 
         // проверяем остаток в from_zone
         BigDecimal availableInFromZone = batchLocationRepository.getQuantityForBatchInZone(
-                request.getBatchId(),
+                batchId,
                 request.getFromZoneId()
         );
 
@@ -158,9 +174,9 @@ public class StockMovementServiceImpl implements StockMovementService {
 
         // обновляем batch_locations
         BatchLocation fromLocation = batchLocationRepository
-                .findByBatchIdAndStorageZoneId(request.getBatchId(), request.getFromZoneId())
+                .findByBatchIdAndStorageZoneId(batchId, request.getFromZoneId())
                 .orElseThrow(() -> new IllegalStateException(
-                        "Не найден batch_location для batchId=" + request.getBatchId()
+                        "Не найден batch_location для batchId=" + batchId
                                 + " и fromZoneId=" + request.getFromZoneId()
                 ));
 
@@ -168,7 +184,7 @@ public class StockMovementServiceImpl implements StockMovementService {
         fromLocation.setQuantity(newFromQty);
 
         BatchLocation toLocation = batchLocationRepository
-                .findByBatchIdAndStorageZoneId(request.getBatchId(), request.getToZoneId())
+                .findByBatchIdAndStorageZoneId(batchId, request.getToZoneId())
                 .orElseGet(() -> BatchLocation.builder()
                         .batch(batch)
                         .storageZone(toZone)
@@ -215,6 +231,8 @@ public class StockMovementServiceImpl implements StockMovementService {
                 .batchId(batch.getId())
                 .build();
     }
+
+
 
     @Override
     public Page<WarehouseOperationMovementResponse> getOperations(

@@ -239,8 +239,10 @@ public class InventoryServiceImpl implements InventoryService {
 
         UUID slId = inv.getStorageLocation().getId();
 
-        StorageZone defaultZone = storageZoneRepository.findFirstActiveForLocation(slId)
+        StorageZone defaultZone = storageZoneRepository
+                .findFirstByStorageLocation_IdAndIsActiveTrueOrderByZoneTypeAscNameAsc(slId)
                 .orElseThrow(() -> new BusinessException("В торговой точке нет активных зон хранения (storage_zones)"));
+
 
         List<InventoryItem> items = itemRepository.findByInventoryIdWithRefs(id);
 

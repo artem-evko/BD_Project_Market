@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -18,9 +19,11 @@ public class ProductDetailResponse {
     private UUID id;
     private String name;
     private String barcode;
-    private String category;
+    private List<String> categories;
     private String unitOfMeasure;
     private Integer shelfLifeDays;
     private DimensionsDto dimensions;
     private ManufacturerDto manufacturer;
+    private BigDecimal totalQuantity;
+    private String additionalInfo;
 }

@@ -13,6 +13,7 @@ import com.shop.system.dto.response.ProductResponse;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -24,23 +25,25 @@ public class ProductMapper {
                 .map(Manufacturer::getManufacturerName)
                 .orElse(null);
 
-        String categoryName = product.getCategoryLinks().stream()
+        // все категории товара
+        List<String> categories = product.getCategoryLinks().stream()
                 .map(ProductCategoryLink::getCategory)
                 .filter(Objects::nonNull)
                 .map(ProductCategory::getName)
-                .sorted()
-                .findFirst()
-                .orElse(null);
+                .filter(Objects::nonNull)
+                .sorted(String::compareToIgnoreCase)
+                .toList();
 
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .barcode(product.getBarcode())
                 .manufacturer(manufacturerName)
-                .category(categoryName)
+                .categories(categories)
                 .unitOfMeasure(product.getUnitOfMeasure())
                 .shelfLifeDays(product.getShelfLifeDays())
                 .currentPrice(currentPrice)
+                .additionalInfo(product.getAdditionalInfo())
                 .build();
     }
 
@@ -79,13 +82,14 @@ public class ProductMapper {
     }
 
     public ProductDetailResponse toDetail(Product product) {
-        String categoryName = product.getCategoryLinks().stream()
+        // все категории товара
+        List<String> categories = product.getCategoryLinks().stream()
                 .map(ProductCategoryLink::getCategory)
                 .filter(Objects::nonNull)
                 .map(ProductCategory::getName)
-                .sorted()
-                .findFirst()
-                .orElse(null);
+                .filter(Objects::nonNull)
+                .sorted(String::compareToIgnoreCase)
+                .toList();
 
         DimensionsDto dimensions = DimensionsDto.builder()
                 .length(parseBigDecimal(product.getLength()))
@@ -107,11 +111,12 @@ public class ProductMapper {
                 .id(product.getId())
                 .name(product.getName())
                 .barcode(product.getBarcode())
-                .category(categoryName)
+                .categories(categories)
                 .unitOfMeasure(product.getUnitOfMeasure())
                 .shelfLifeDays(product.getShelfLifeDays())
                 .dimensions(dimensions)
                 .manufacturer(manufacturerDto)
+                .additionalInfo(product.getAdditionalInfo())
                 .build();
     }
 

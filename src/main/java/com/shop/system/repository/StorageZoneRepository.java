@@ -21,4 +21,6 @@ public interface StorageZoneRepository extends JpaRepository<StorageZone, UUID> 
         order by z.zoneType asc, z.name asc
     """)
     Optional<StorageZone> findFirstActiveForLocation(@Param("storageLocationId") UUID storageLocationId);
+
+    Optional<StorageZone> findFirstByStorageLocation_IdAndIsActiveTrueOrderByZoneTypeAscNameAsc(UUID storageLocationId);
 }
