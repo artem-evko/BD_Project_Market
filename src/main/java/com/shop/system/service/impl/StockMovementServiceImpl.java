@@ -135,19 +135,32 @@ public class StockMovementServiceImpl implements StockMovementService {
             throw new IllegalArgumentException("Зоны должны принадлежать текущей торговой точке");
         }
 
-        Batch batch = batchRepository.findById(request.getBatchId())
-                .orElseThrow(() -> new EntityNotFoundException("Batch not found: " + request.getBatchId()));
+        // ИЩЕМ ПАРТИЮ ПО productId + fromZone + текущая ТТ
+        BatchLocation fromLocation = batchLocationRepository
+                .findTop1ByBatch_Product_IdAndStorageZone_IdAndStorageZone_StorageLocation_IdAndQuantityGreaterThanOrderByBatch_ExpirationDateAsc(
+                        request.getProductId(),
+                        request.getFromZoneId(),
+                        storageLocation.getId(),
+                        BigDecimal.ZERO
+                )
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Для товара " + request.getProductId()
+                                + " нет партий с положительным остатком в зоне " + fromZone.getName()
+                ));
 
+        Batch batch = fromLocation.getBatch();
         Product product = batch.getProduct();
+
+        // на всякий случай, если кто-то руками шлёт кривой productId
         if (!product.getId().equals(request.getProductId())) {
-            throw new IllegalArgumentException("batchId не принадлежит указанному productId");
+            throw new IllegalStateException("Найдена партия, но её productId не совпадает с request.productId. Это уже какая-то жопа в данных.");
         }
 
-        // проверяем остаток в from_zone
-        BigDecimal availableInFromZone = batchLocationRepository.getQuantityForBatchInZone(
-                request.getBatchId(),
-                request.getFromZoneId()
-        );
+        BigDecimal availableInFromZone = fromLocation.getQuantity() == null
+                ? BigDecimal.ZERO
+                : fromLocation.getQuantity();
 
         if (availableInFromZone.compareTo(request.getQuantity()) < 0) {
             throw new IllegalArgumentException(
@@ -156,19 +169,13 @@ public class StockMovementServiceImpl implements StockMovementService {
             );
         }
 
-        // обновляем batch_locations
-        BatchLocation fromLocation = batchLocationRepository
-                .findByBatchIdAndStorageZoneId(request.getBatchId(), request.getFromZoneId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Не найден batch_location для batchId=" + request.getBatchId()
-                                + " и fromZoneId=" + request.getFromZoneId()
-                ));
-
-        BigDecimal newFromQty = fromLocation.getQuantity().subtract(request.getQuantity());
+        // списываем из fromZone
+        BigDecimal newFromQty = availableInFromZone.subtract(request.getQuantity());
         fromLocation.setQuantity(newFromQty);
 
+        // ищем / создаём запись для toZone по этой же партии
         BatchLocation toLocation = batchLocationRepository
-                .findByBatchIdAndStorageZoneId(request.getBatchId(), request.getToZoneId())
+                .findByBatchIdAndStorageZoneId(batch.getId(), request.getToZoneId())
                 .orElseGet(() -> BatchLocation.builder()
                         .batch(batch)
                         .storageZone(toZone)
@@ -176,7 +183,11 @@ public class StockMovementServiceImpl implements StockMovementService {
                         .build()
                 );
 
-        BigDecimal newToQty = toLocation.getQuantity().add(request.getQuantity());
+        BigDecimal currentToQty = toLocation.getQuantity() == null
+                ? BigDecimal.ZERO
+                : toLocation.getQuantity();
+
+        BigDecimal newToQty = currentToQty.add(request.getQuantity());
         toLocation.setQuantity(newToQty);
 
         batchLocationRepository.save(fromLocation);
@@ -212,9 +223,10 @@ public class StockMovementServiceImpl implements StockMovementService {
                 .toZone(toZone.getName())
                 .reason(saved.getReason())
                 .employeeFullName(employee.getFullName())
-                .batchId(batch.getId())
+                .batchId(batch.getId())   // всё ещё отдаём, просто не требуем от фронта
                 .build();
     }
+
 
     @Override
     public Page<WarehouseOperationMovementResponse> getOperations(

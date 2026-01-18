@@ -72,4 +72,12 @@ public interface BatchLocationRepository extends JpaRepository<BatchLocation, UU
     );
 
     Optional<BatchLocation> findByBatchIdAndStorageZoneId(UUID batchId, UUID storageZoneId);
+
+    List<BatchLocation> findTop1ByBatch_Product_IdAndStorageZone_IdAndStorageZone_StorageLocation_IdAndQuantityGreaterThanOrderByBatch_ExpirationDateAsc(
+            UUID productId,
+            UUID storageZoneId,
+            UUID storageLocationId,
+            BigDecimal minQuantity
+    );
+
 }
