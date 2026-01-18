@@ -196,11 +196,11 @@ public class PriceCalculationServiceImpl implements PriceCalculationService {
     @Override
     @Transactional(readOnly = true)
     public List<StorageLocationResponse> getStorageLocations() {
-        // Эквивалент твоего SQL:
-        // select id, name from storage_locations order by name;
-        return storageLocationRepository.findAll(Sort.by(Sort.Direction.ASC, "name"))
-                .stream()
-                .map(sl -> new StorageLocationResponse(sl.getId(), sl.getName()))
+        return storageLocationRepository.findIdNameOrdered().stream()
+                .map(r -> new StorageLocationResponse(
+                        (UUID) r[0],
+                        (String) r[1]
+                ))
                 .toList();
     }
 
@@ -329,4 +329,5 @@ public class PriceCalculationServiceImpl implements PriceCalculationService {
                 effectiveDate
         );
     }
+
 }

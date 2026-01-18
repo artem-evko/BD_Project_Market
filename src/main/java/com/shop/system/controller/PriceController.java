@@ -1,5 +1,6 @@
 package com.shop.system.controller;
 
+import com.shop.system.domain.entity.UserAccount;
 import com.shop.system.dto.request.ManualPriceRequest;
 import com.shop.system.dto.response.CurrentPriceResponse;
 import com.shop.system.dto.response.DailySetupResponse;
@@ -7,12 +8,15 @@ import com.shop.system.dto.response.ManualPriceResponse;
 import com.shop.system.dto.response.PriceHistoryResponse;
 import com.shop.system.dto.response.StopListItemResponse;
 import com.shop.system.dto.response.StorageLocationResponse;
+import com.shop.system.repository.UserAccountRepository;
 import com.shop.system.security.CurrentUserPrincipal;
 import com.shop.system.service.PriceCalculationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

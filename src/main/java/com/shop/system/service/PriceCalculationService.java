@@ -24,4 +24,5 @@ public interface PriceCalculationService {
     List<PriceHistoryResponse> getHistory(UUID productId, Integer days);
 
     ManualPriceResponse manualChange(ManualPriceRequest request);
+
 }
