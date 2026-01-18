@@ -196,13 +196,11 @@ public class PriceCalculationServiceImpl implements PriceCalculationService {
     @Override
     @Transactional(readOnly = true)
     public List<StorageLocationResponse> getStorageLocations() {
-        return storageLocationRepository.findIdNameOrdered().stream()
-                .map(r -> new StorageLocationResponse(
-                        (UUID) r[0],
-                        (String) r[1]
-                ))
+        return storageLocationRepository.findIdAndNameOrdered().stream()
+                .map(r -> new StorageLocationResponse((UUID) r[0], (String) r[1]))
                 .toList();
     }
+
 
     @Override
     @Transactional(readOnly = true)
