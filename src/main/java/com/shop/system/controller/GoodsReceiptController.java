@@ -51,4 +51,11 @@ public class GoodsReceiptController {
                                          @Valid @RequestBody DiscrepancyDecisionRequest request) {
         return warehouseService.decideDiscrepancy(discrepancyId, request);
     }
+
+    @GetMapping("/by-number")
+    public GoodsReceiptResponse getForReceiptByNumber(@RequestParam String invoiceNumber) {
+        UUID id = warehouseService.getSupplyInvoiceIdByNumber(invoiceNumber);
+        return warehouseService.getSupplyInvoiceForReceipt(id);
+    }
+
 }

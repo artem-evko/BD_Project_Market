@@ -7,6 +7,8 @@ import com.shop.system.exception.BusinessException;
 import com.shop.system.repository.*;
 import com.shop.system.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -453,6 +456,44 @@ public class WarehouseServiceImpl implements WarehouseService {
         }
 
         return ua.getEmployee();
+    }
+
+    @Override
+    public Page<SupplyInvoiceListItemResponse> listSupplyInvoices(
+            String search,
+            String status,
+            UUID storageLocationId,
+            LocalDate expectedFrom,
+            LocalDate expectedTo,
+            Pageable pageable
+    ) {
+        Pageable safePageable = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize()
+        );
+
+        return supplyInvoiceRepository.findSupplyInvoicesList(
+                blankToNull(search),
+                blankToNull(status),
+                storageLocationId,
+                expectedFrom,
+                expectedTo,
+                safePageable
+        ).map(p -> SupplyInvoiceListItemResponse.builder()
+                .id(p.getId())
+                .invoiceNumber(p.getInvoiceNumber())
+                .status(p.getStatus())
+                .expectedDate(p.getExpectedDate())
+                .actualDate(p.getActualDate())
+                .storageLocationId(p.getStorageLocationId())
+                .contractId(p.getContractId())
+                .contractNumber(p.getContractNumber())
+                .build());
+    }
+
+
+    private String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s;
     }
 
 
